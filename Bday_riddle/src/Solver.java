@@ -75,11 +75,12 @@ public class Solver {
     }
 
 
-    // changes color to blue for an Egde
+    // changes color of an edge
     public void changeOneColor(int index, int color){
         allEdges.get(index).setColor(color);
     }
 
+    // get all edges of a node with specified color
     public List<Edge> getEdgesOfColorForNode(int id, int color){
         List<Edge> result = new ArrayList<>();
         for(Edge edge: allEdges){
