@@ -7,6 +7,7 @@ public class Solver {
     List<Edge> allEdges;
     List<Nob> allNobs;
     int[][] matrix;
+    int num_of_nobs;
 
     public Solver(int num_of_nobs){
         this.allNobs = new ArrayList<>();
@@ -20,13 +21,14 @@ public class Solver {
                 }
             }
         }
+        this.num_of_nobs = num_of_nobs;
         this.matrix = generateMatrix(allEdges.size());
     }
 
     public int[][] generateMatrix(int n){
         int rows = (int) Math.pow(2,n);
         int[][] matrix = new int[rows][n];
-        System.out.println(rows);
+        //System.out.println(rows);
         int interval = rows;
         int index = 0;
         boolean red = true;
@@ -55,40 +57,27 @@ public class Solver {
                 }
             }
         }
-        System.out.println(Arrays.deepToString(matrix));
+        //System.out.println(Arrays.deepToString(matrix));
         return matrix;
     }
 
     public boolean solve(){
-
-        for(int i = 0; i < allEdges.size(); i++){
-            changeOneColor(i);
-            if(!testForSolution()){
+        int compositions = (int) Math.pow(2, num_of_nobs);
+        for(int i = 0; i < compositions; i++){
+            for(int j = 0; j < num_of_nobs; j++){
+                changeOneColor(j, matrix[i][j]);
+            }
+            if(!testForSolution().isEmpty()){
                 return false;
             }
-            for(int j = 0; j < allEdges.size(); j++){
-                if(j != i){
-                    changeOneColor(j);
-                    if(!testForSolution()){
-                        return false;
-                    }
-                }
-                resetColors();
-            }
-            resetColors();
         }
         return true;
     }
 
-    public void resetColors(){
-        for(Edge edge : allEdges){
-            edge.setColor(0);
-        }
-    }
 
     // changes color to blue for an Egde
-    public void changeOneColor(int index){
-        allEdges.get(index).setColor(1);
+    public void changeOneColor(int index, int color){
+        allEdges.get(index).setColor(color);
     }
 
     public List<Edge> getEdgesOfColorForNode(int id, int color){
@@ -110,53 +99,78 @@ public class Solver {
         return false;
     }
 
+    public Edge getEdge(int id1, int id2){
+        for(Edge edge: allEdges){
+            if((edge.getId_1() == id1 && edge.getId_2() == id2) || (edge.getId_1() == id2 && edge.getId_2() == id1)){
+                return edge;
+            }
+        }
+        return null;
+    }
 
-    public boolean testForSolution(){
+    public boolean validEdge(List<Integer> nobs, Edge edge){
+        return !nobs.contains(edge.id_1) || !nobs.contains(edge.id_2);
+    }
+
+
+    public List<Edge> testForSolution(){
+        List<Edge> path = new ArrayList<>();
+        List<Integer> nobs = new ArrayList<>();
         for(Edge edge_1 : allEdges){
+            path.add(edge_1);
             int nob1 = edge_1.id_1;
+            nobs.add(nob1);
             int color = edge_1.color;
             List<Edge> edgesWColor = getEdgesOfColorForNode(nob1, color);
             if(edgesWColor.size() > 1){
                 int nob2 = edge_1.id_2;
+                nobs.add(nob2);
                 for(Edge edge_2 : getEdgesOfColorForNode(nob2, color)){
                     int nob3;
-                    if(!edge_1.equals(edge_2)){
+                    if(!path.contains(edge_2) && validEdge(nobs, edge_2)){
+                        path.add(edge_2);
                         if(edge_2.id_1 != nob2) {
                             nob3 = edge_2.id_1;
                         }
-                        else {
+                        else{
                             nob3 = edge_2.id_2;
                         }
+                        nobs.add(nob3);
                         for(Edge edge_3 : getEdgesOfColorForNode(nob3, color)){
                             int nob4;
-                            if(!edge_3.equals(edge_2)){
+                            if(!path.contains(edge_3) && validEdge(nobs, edge_3)){
+                                path.add(edge_3);
                                 if(edge_3.id_1 != nob3) {
                                     nob4 = edge_3.id_1;
                                 }
                                 else {
                                     nob4 = edge_3.id_2;
                                 }
-
-                                if(containsEdge(getEdgesOfColorForNode(nob4, color), nob4, nob1)){
-                                    return true;
+                                if(getEdge(nob4, nob1).color == color){
+                                    path.add(getEdge(nob4, nob1));
+                                    return path;
                                 }
+                                path.remove(edge_3);
                             }
 
                         }
+                        path.remove(edge_2);
 
                     }
                 }
-
+                path.remove(edge_1);
             }
         }
-        return false;
+        return path;
     }
 
     public static void main(String[] args) {
         int i = 4;
         while(true){
+            System.out.println(i);
             Solver solver = new Solver(i);
             if(solver.solve()){
+                System.out.println("YAY");
                 System.out.println(i);
                 return;
             }
